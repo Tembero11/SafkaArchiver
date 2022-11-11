@@ -1,0 +1,18 @@
+{
+  "name": "safkabot",
+  "version": "1.0.0",
+  "description": "",
+  "main": "src/index.js",
+  "scripts": {
+    "start": "ts-node src/index.ts"
+  },
+  "author": "Tembero",
+  "license": "MIT",
+  "devDependencies": {
+    "ts-node": "^10.9.1",
+    "typescript": "^4.8.4"
+  },
+  "dependencies": {
+    "node-html-parser": "^6.1.1"
+  }
+}
