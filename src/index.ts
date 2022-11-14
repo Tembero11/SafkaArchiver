@@ -1,5 +1,10 @@
 import ms from "ms";
-import { parseMenu, pollMenu } from "./api"
+import express from "express";
+import cors from "cors"
+import { parseMenu, pollMenu } from "./scrape"
+import { WeekMenu } from "./types";
+
+export let currentMenu: WeekMenu;
 
 function setupPoller() {
     pollMenu().then(({currentPage, lastModified}) => {
@@ -11,10 +16,24 @@ function setupPoller() {
 
         if (!menu) return;
 
-        
+        currentMenu = menu;
 
+        console.log(menu.entries())
 
         setTimeout(setupPoller,  timeUntilNextPoll);
     });
 }
+
+const app = express();
+
+app.use(cors())
+
+app.get("/api/v1/safka/", (req, res) => {
+    console.log(Object.fromEntries(currentMenu))
+    res.json(Object.fromEntries(currentMenu));
+});
+
+app.listen(5000);
+
+
 setupPoller();

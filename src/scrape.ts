@@ -23,8 +23,6 @@ export function parseMenu(pageBody: string) {
 
         if (dayHTML) {
             const [dayNameHTML, foodsHTML] = dayHTML.getElementsByTagName("td");
-
-            const dayName = dayNameHTML.firstChild.innerText;
             const foods = foodsHTML.getElementsByTagName("p").map(e => parseFood(e.innerText)).filter(e => e.name);
 
             const daysMenu = {
@@ -35,16 +33,7 @@ export function parseMenu(pageBody: string) {
             fullMenu.set(dayList[i] as WeekdayId,  {menu: []});
         }
     }
-
-    for (const dayHTML of dayContainers) {
-        
-        // console.log(util.inspect(daysMenu, false, 4, true))
-    }
     return fullMenu;
-}
-
-function numberToWeekdayId() {
-    
 }
 
 export async function pollMenu() {
@@ -57,15 +46,6 @@ export async function pollMenu() {
 
     return { currentPage: resp.data, lastModified: new Date(lastModified) };
 }
-
-
-
-
-function parseDay(dayName: string): DayName {
-    const parsedDayName = dayName.trim().toLowerCase() as DayName;
-    return parsedDayName;
-}
-
 
 function parseFood(foodName: string) {
     const trimmed = foodName.trim();
