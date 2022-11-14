@@ -11,3 +11,9 @@ export interface DayMenu {
     day: DayName,
     menu: { name: string, diets: Diet[]}[]
 }
+
+export type WeekdayId = "mon" | "tues" | "wed" | "thurs" | "fri" | "sat" | "sun";
+
+export type WeekMenu = Map<WeekdayId, {
+    menu: { name: string; diets: Diet[]; }[];
+}>

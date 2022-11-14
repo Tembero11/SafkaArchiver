@@ -1,10 +1,19 @@
 import ms from "ms";
-import { pollMenu } from "./api"
+import { parseMenu, pollMenu } from "./api"
 
 function setupPoller() {
-    pollMenu().then(updateTime => {
-        const timeUntilNextPoll = (16 * 60 * 1000) - (new Date().getTime() - updateTime.getTime());
-        console.log("Page will be polled in " + ms(timeUntilNextPoll));
+    pollMenu().then(({currentPage, lastModified}) => {
+        const timeUntilNextPoll = (16 * 60 * 1000) - (new Date().getTime() - lastModified.getTime());
+        
+        console.log("Page will be polled in " + ms(timeUntilNextPoll, { long: true }));
+
+        const menu = parseMenu(currentPage);
+
+        if (!menu) return;
+
+        
+
+
         setTimeout(setupPoller,  timeUntilNextPoll);
     });
 }
