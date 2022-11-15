@@ -1,7 +1,6 @@
 import axios from "axios";
 import { parse } from "node-html-parser";
-import util from "util";
-import { DayMenu, DayName, Diet, WeekdayId, WeekMenu } from "./types";
+import { Diet, WeekdayId, WeekMenu } from "./types";
 
 const TAI_SAFKA_URL = "https://www.turkuai.fi/turun-ammatti-instituutti/opiskelijalle/ruokailu-ja-ruokalistat/ruokalista-juhannuskukkula-topseli";
 
@@ -16,7 +15,7 @@ export function parseMenu(pageBody: string) {
     const dayContainers = root.querySelectorAll("tr");
     if (!dayContainers) return;
 
-    let fullMenu: WeekMenu = new Map();
+    let fullMenu = [];
 
     for (let i = 0; i < 7; i++) {
         const dayHTML = dayContainers.at(i);
@@ -26,11 +25,12 @@ export function parseMenu(pageBody: string) {
             const foods = foodsHTML.getElementsByTagName("p").map(e => parseFood(e.innerText)).filter(e => e.name);
 
             const daysMenu = {
+                dayId: dayList[i] as WeekdayId,
                 menu: foods
             }
-            fullMenu.set(dayList[i] as WeekdayId, daysMenu);
+            fullMenu.push(daysMenu);
         }else {
-            fullMenu.set(dayList[i] as WeekdayId,  {menu: []});
+            fullMenu.push({dayId: dayList[i] as WeekdayId, menu: []});
         }
     }
     return fullMenu;

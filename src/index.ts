@@ -29,8 +29,8 @@ const app = express();
 app.use(cors())
 
 app.get("/api/v1/safka/", (req, res) => {
-    console.log(Object.fromEntries(currentMenu))
-    res.json(Object.fromEntries(currentMenu));
+    console.log(currentMenu)
+    res.json(currentMenu);
 });
 
 app.listen(5000);
