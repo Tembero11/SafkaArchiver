@@ -8,9 +8,11 @@ import { WeekMenu } from "./types";
 import { getCurrentDayIndex } from "./utils";
 
 /* Data base */
-import { saveToJson } from "./database/database";
+import { Database } from "./database/database";
+import { Mongo } from "./database/mongo";
 
 export let currentMenu: WeekMenu;
+let foodArchive: Database;
 
 function setupPoller() {
     pollMenu().then(({currentPage, lastModified}) => {
@@ -21,7 +23,11 @@ function setupPoller() {
         const menu = parseMenu(currentPage);
 
         if (!menu) return;
-        saveToJson(menu[getCurrentDayIndex()]);
+
+        /* Add current menu to mongoDb */
+        foodArchive.menu = menu[getCurrentDayIndex()];
+        foodArchive.saveToDb(foodArchive.menu);
+        foodArchive.readFromDb();
         
         currentMenu = menu;
         
@@ -39,5 +45,10 @@ app.get("/api/v1/safka/", (req, res) => {
 
 app.listen(5000);
 
-
+/* Ininitialise database*/
+const mongodb = new Mongo("SafkaBot2", "mongodb://localhost:27017")
+mongodb.newClient();
+mongodb.getDatabase().then((db => {
+    foodArchive = new Database(db);
+}))
 setupPoller();
