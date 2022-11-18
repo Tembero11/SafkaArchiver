@@ -36,15 +36,12 @@ export class Database {
  */
     async saveToDb(menuObj: DayMenu) {
         if (this.dbObj != undefined) {
-            console.log(this.dbObj)
             const collection = this.dbObj.collection("foods");
             const res = await collection.insertOne(menuObj);
-            console.log(res);
         }
-        
     }
 
     async readFromDb() {
-        if (this.dbObj != undefined) this.dbObj.collection("foods").find({}).toArray();
+        if (this.dbObj != undefined) console.log(await this.dbObj.collection("foods").find({}).toArray());
     }
 }

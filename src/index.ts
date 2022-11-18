@@ -46,9 +46,11 @@ app.get("/api/v1/safka/", (req, res) => {
 app.listen(5000);
 
 /* Ininitialise database*/
-const mongodb = new Mongo("SafkaBot2", "mongodb://localhost:27017")
+const mongodb = new Mongo("SafkaBot2", "mongodb://127.0.0.1:27017")
 mongodb.newClient();
 mongodb.getDatabase().then((db => {
     foodArchive = new Database(db);
 }))
+
+/* Launch poller */
 setupPoller();

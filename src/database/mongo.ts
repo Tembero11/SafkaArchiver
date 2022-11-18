@@ -16,11 +16,10 @@ export class Mongo {
         const client = new MongoClient(this.dbUrl);
 
         // Use connect method to connect to the server
-        await client.connect();
         console.log(`Connected successfully to server with database ${this.dbName}`);
 
         // Create a database object used to modify or read the database
-        this._db = await client.db(this.dbName);
+        this._db = client.db(this.dbName);
         this._client = client;
     }
 
