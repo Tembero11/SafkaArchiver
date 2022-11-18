@@ -4,6 +4,7 @@ import path from "path";
 import { jsonPrettyPrinter } from "../utils";
 import { Mongo } from "./mongo";
 import { MongoClient, Db } from 'mongodb';
+import util from "util";
 
 export class Database {
     menu?: DayMenu;
@@ -42,6 +43,6 @@ export class Database {
     }
 
     async readFromDb() {
-        if (this.dbObj != undefined) console.log(await this.dbObj.collection("foods").find({}).toArray());
+        if (this.dbObj != undefined) console.log(util.inspect(await this.dbObj.collection("foods").find({}).toArray(), false, 5, true));
     }
 }
