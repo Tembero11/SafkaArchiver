@@ -4,6 +4,12 @@ import cors from "cors"
 import { parseMenu, pollMenu } from "./scrape"
 import { WeekMenu } from "./types";
 
+/* Utils */
+import { getCurrentDayIndex } from "./utils";
+
+/* Data base */
+import { saveToJson } from "./database/database";
+
 export let currentMenu: WeekMenu;
 
 function setupPoller() {
@@ -15,11 +21,10 @@ function setupPoller() {
         const menu = parseMenu(currentPage);
 
         if (!menu) return;
-
+        saveToJson(menu[getCurrentDayIndex()]);
+        
         currentMenu = menu;
-
-        console.log(menu.entries())
-
+        
         setTimeout(setupPoller,  timeUntilNextPoll);
     });
 }
@@ -29,7 +34,6 @@ const app = express();
 app.use(cors())
 
 app.get("/api/v1/safka/", (req, res) => {
-    console.log(currentMenu)
     res.json(currentMenu);
 });
 
