@@ -1,28 +1,15 @@
-import ms from "ms";
 import express from "express";
 import cors from "cors"
-import { parseMenu, pollMenu } from "./scrape"
 import { WeekMenu } from "./types";
+import Poller from "./poller";
 
 export let currentMenu: WeekMenu;
 
-function setupPoller() {
-    pollMenu().then(({currentPage, lastModified}) => {
-        const timeUntilNextPoll = (16 * 60 * 1000) - (new Date().getTime() - lastModified.getTime());
-        
-        console.log("Page will be polled in " + ms(timeUntilNextPoll, { long: true }));
-
-        const menu = parseMenu(currentPage);
-
-        if (!menu) return;
-
-        currentMenu = menu;
-
-        console.log(menu.entries())
-
-        setTimeout(setupPoller,  timeUntilNextPoll);
-    });
-}
+const poller = new Poller();
+poller.startPolling();
+poller.on("polled", (menu) => {
+    
+});
 
 const app = express();
 
@@ -34,6 +21,3 @@ app.get("/api/v1/safka/", (req, res) => {
 });
 
 app.listen(5000);
-
-
-setupPoller();
