@@ -21,7 +21,11 @@ export function parseMenu(page: string) {
 
     const dayContainers = root.querySelectorAll("tr");
     assert(dayContainers, new ElementUndefinedError("dayContainers"));
-    let fullMenu = [];
+    
+
+    const modifiedTime = getModifiedTime(root);
+
+    let fullMenu: WeekMenu = { mtime: modifiedTime,  week: [] };
 
     const weekNum = getWeekNumber(root);
     // This might break when the year changes
@@ -32,7 +36,7 @@ export function parseMenu(page: string) {
         const dayHTML = dayContainers.at(i);
 
         if (!dayHTML) {
-            fullMenu.push({dayId: dayList[i] as WeekdayId, date, menu: []});
+            fullMenu.week.push({dayId: dayList[i] as WeekdayId, date, menu: []});
             continue;
         }
 
@@ -45,16 +49,29 @@ export function parseMenu(page: string) {
             date,
             menu: foods
         }
-        fullMenu.push(daysMenu);
+        fullMenu.week.push(daysMenu);
     }
     return fullMenu;
 }
+
+function getModifiedTime(root: HTMLElement) {
+    const meta = root.querySelector("head > meta[property=article:modified_time]");
+    assert(meta, new ElementUndefinedError("meta"));
+
+    const content = meta.getAttribute("content");
+    assert(content, new Error("\"content\" attribute does not exist on \"meta\"."));
+
+    assert(isValidDateString(content));
+
+    return new Date(content);
+}
+
 function getWeekNumber(root: HTMLElement) {
     const meta = root.querySelector("head > meta[name=abstract]");
     assert(meta, new ElementUndefinedError("meta"));
 
     const content = meta.getAttribute("content");
-    assert(content, new Error("\"content\" attribute does not exist on \"content\"."));
+    assert(content, new Error("\"content\" attribute does not exist on \"meta\"."));
 
     const matches = content.match(/ruokalista vko [0-9]{1,2}/i);
     assert(matches);
@@ -98,10 +115,7 @@ export async function pollMenu() {
     let lastModified = resp.headers["last-modified"];
 
     assert(typeof lastModified === "string", new InvalidDateError(lastModified));
-
-    const date = new Date(lastModified);
-
-    assert.notEqual(date, "Invalid Date", new InvalidDateError(lastModified));
+    assert(isValidDateString(lastModified), new InvalidDateError(lastModified));
 
     return { currentPage: resp.data, lastModified: new Date(lastModified) };
 }
@@ -135,4 +149,8 @@ function parseFood(foodName: string) {
         diets
     }
     return result;
+}
+
+function isValidDateString(date: string) {
+    return new Date(date).toString() != "Invalid Date";
 }
