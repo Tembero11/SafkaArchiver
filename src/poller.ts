@@ -4,7 +4,7 @@ import { parseMenu, pollMenu } from "./scrape";
 import { WeekMenu } from "./types";
 
 interface PollerOptions {
-    logs?: boolean
+    enableLogs?: boolean
 }
 
 declare interface Poller {
@@ -18,8 +18,13 @@ class Poller extends EventEmitter {
     // 3 min in ms
     readonly retryTime = 3 * 60 * 1000;
 
+    enableLogs: boolean = true;
+
     constructor(options?: PollerOptions) {
         super();
+        if (options?.enableLogs === false) {
+            this.enableLogs = false;
+        }
     }
 
     startPolling() {
@@ -38,8 +43,10 @@ class Poller extends EventEmitter {
         try {
             pollResult = await pollMenu();
         } catch (err) {
-            console.log(err);
-            console.log("Page load failed. Retrying in " + ms(this.retryTime, { long: true }));
+            if (this.enableLogs) {
+                console.log(err);
+                console.log("Page load failed. Retrying in " + ms(this.retryTime, { long: true }));
+            }
             setTimeout(() => this.poll.bind(this)(), this.retryTime);
             
             return;
@@ -49,18 +56,23 @@ class Poller extends EventEmitter {
 
         const timeUntilNextPoll = this.getNextPollTime(lastModified);
 
-        console.log("Page will be polled in " + ms(timeUntilNextPoll, { long: true }));
+        if (this.enableLogs) {
+            console.log("Page will be polled in " + ms(timeUntilNextPoll, { long: true }));
+        }
         
         let menu;
         try {
             menu = parseMenu(currentPage);
         } catch (err) {
+            if (this.enableLogs) {
+                console.log(err);
+                console.log("Page load failed. Retrying in " + ms(this.retryTime, { long: true }));
+            }
             console.log(err);
             setTimeout(() => this.poll.bind(this)(), this.retryTime);
             return;
         }
 
-        // TODO call event listener
         this.emit("polled", menu);
         
         setTimeout(() => this.poll.bind(this)(),  timeUntilNextPoll);

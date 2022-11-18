@@ -1,23 +1,30 @@
 import express from "express";
-import cors from "cors"
+import cors from "cors";
+import util from "util";
 import { WeekMenu } from "./types";
 import Poller from "./poller";
 
-export let currentMenu: WeekMenu;
+export let currentMenu: WeekMenu | undefined;
 
-const poller = new Poller();
+const poller = new Poller({ enableLogs: true });
 poller.startPolling();
 poller.on("polled", (menu) => {
-    
+    currentMenu = menu;
+    console.log(util.inspect(currentMenu, false, 4, true));
 });
+
+// HTTP
+
+const PORT = process.env.PORT || 5000;
 
 const app = express();
 
-app.use(cors())
+app.use(cors());
 
 app.get("/api/v1/safka/", (req, res) => {
-    console.log(currentMenu)
-    res.json(currentMenu);
+    if (currentMenu) {
+        res.json(currentMenu);
+    }
 });
 
-app.listen(5000);
+app.listen(PORT);

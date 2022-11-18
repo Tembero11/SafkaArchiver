@@ -9,6 +9,7 @@ export enum Diet {
 
 export interface DayMenu {
     dayId: WeekdayId;
+    date: string
     menu: {
         name: string;
         diets: Diet[];
