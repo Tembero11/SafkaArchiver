@@ -1,14 +1,10 @@
 import axios from "axios";
-import assert, { match } from "assert";
+import assert from "assert";
 import { HTMLElement, parse } from "node-html-parser";
 import { ElementUndefinedError, InvalidDateError } from "./errors";
-import { Diet, WeekdayId, WeekMenu } from "./types";
+import { Diet, Weekday, WeekMenu } from "./types";
 
 const TAI_SAFKA_URL = "https://www.turkuai.fi/turun-ammatti-instituutti/opiskelijalle/ruokailu-ja-ruokalistat/ruokalista-juhannuskukkula-topseli";
-
-const dayList = [
-    "mon", "tues", "wed", "thurs", "fri", "sat", "sun"
-]
 
 /**
  * 
@@ -25,18 +21,19 @@ export function parseMenu(page: string) {
 
     const modifiedTime = getModifiedTime(root);
 
-    let fullMenu: WeekMenu = { mtime: modifiedTime,  week: [] };
+    let fullMenu: WeekMenu = { mtime: modifiedTime,  days: [] };
 
     const weekNum = getWeekNumber(root);
     // This might break when the year changes
     const mondayDate = getDateOfISOWeek(weekNum, new Date().getFullYear());
 
-    for (let i = 0; i < 7; i++) {
+    for (let i = 0; i < Object.keys(Weekday).length; i++) {
+        const dayId = Object.values(Weekday)[i];
         const date = addDays(mondayDate, i);
         const dayHTML = dayContainers.at(i);
 
         if (!dayHTML) {
-            fullMenu.week.push({dayId: dayList[i] as WeekdayId, date, menu: []});
+            fullMenu.days.push({dayId, date, menu: []});
             continue;
         }
 
@@ -45,11 +42,11 @@ export function parseMenu(page: string) {
         const foods = foodsHTML.getElementsByTagName("p").map(e => parseFood(e.innerText)).filter(e => e.name);
 
         const daysMenu = {
-            dayId: dayList[i] as WeekdayId,
+            dayId,
             date,
             menu: foods
         }
-        fullMenu.week.push(daysMenu);
+        fullMenu.days.push(daysMenu);
     }
     return fullMenu;
 }

@@ -7,18 +7,28 @@ export enum Diet {
     G = "G",
 }
 
-export interface DayMenu {
-    dayId: WeekdayId;
-    date: Date
-    menu: {
-        name: string;
-        diets: Diet[];
-    }[];
+export interface Food {
+    name: string;
+    diets: Diet[];
 }
 
-export type WeekdayId = "mon" | "tues" | "wed" | "thurs" | "fri" | "sat" | "sun";
+export interface DayMenu {
+    dayId: Weekday;
+    date: Date
+    menu: Food[];
+}
+
+export enum Weekday {
+    Monday = "mon",
+    Tuesday = "tues",
+    Wednesday = "wed",
+    Thursday = "thurs",
+    Friday = "fri",
+    Saturday = "sat",
+    Sunday = "sun"
+}
 
 export interface WeekMenu {
     mtime: Date
-    week: DayMenu[]
+    days: DayMenu[]
 }
