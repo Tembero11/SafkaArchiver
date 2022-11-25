@@ -5,7 +5,7 @@ import Poller from "./poller";
 
 
 /* Utils */
-import { getCurrentDayIndex } from "./utils";
+import { getCurrentDayIndex, parseDate } from "./utils";
 
 /* Database */
 import { Database } from "./database/db";
@@ -43,12 +43,20 @@ const dbSetup = new DatabaseSetup("SafkaBot2", "mongodb://127.0.0.1:27017");
 
 
 const PORT = process.env.PORT || 5000;
-        
 const app = express();
 
 app.use(cors());
 
 app.get("/api/v1/safka/", (req, res) => {
+    if (typeof req.query?.date != "string") return;
+
+    const date = parseDate(req.query.date);
+
+    if (!date) return;
+
+    console.log(date.toLocaleDateString());
+
+
     if (currentMenu) {
         res.json(currentMenu);
     }
