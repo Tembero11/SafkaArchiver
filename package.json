@@ -1,19 +1,39 @@
 {
-  "name": "safkabot",
+  "name": "safka-archiver",
   "version": "1.0.0",
-  "description": "",
+  "description": "Archives the Juhannuskukkula Safka menu & allows it to be queried from an API.",
   "main": "dist/index.js",
   "scripts": {
-    "dev": "ts-node src/index.ts",
-    "start": "node dist/index",
-    "build": "tsc -p ."
+    "start": "cross-env NODE_ENV=production node dist/index",
+    "dev": "cross-env NODE_ENV=development ts-node src/index.ts",
+    "build": "tsc -p .",
+    "clean": "del-cli ./dist --force"
   },
-  "author": "Tembero",
+  "contributors": [
+    {
+      "name": "Tembero11",
+      "url": "https://github.com/Tembero11"
+    },
+    {
+      "name": "Finnbyte",
+      "url": "https://github.com/Finnbyte"
+    }
+  ],
+  "bugs": "https://github.com/Tembero11/SafkaArchiver/issues",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Tembero11/SafkaArchiver"
+  },
   "license": "MIT",
+  "engines": {
+    "node": ">=18.12.1"
+  },
   "devDependencies": {
     "@types/cors": "^2.8.12",
     "@types/express": "^4.17.14",
     "@types/ms": "^0.7.31",
+    "cross-env": "^7.0.3",
+    "del-cli": "^5.0.0",
     "ts-node": "^10.9.1",
     "typescript": "^4.8.4"
   },
