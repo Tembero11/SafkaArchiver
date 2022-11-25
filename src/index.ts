@@ -7,9 +7,9 @@ import { WeekMenu } from "./types";
 /* Utils */
 import { getCurrentDayIndex } from "./utils";
 
-/* Data base */
-import { Database } from "./database/database";
-import { Mongo } from "./database/mongo";
+/* Database */
+import { Database } from "./database/db";
+import { DatabaseHandler } from "./database/dbHandler";
 
 export let currentMenu: WeekMenu;
 let foodArchive: Database;
@@ -46,7 +46,7 @@ app.get("/api/v1/safka/", (req, res) => {
 app.listen(5000);
 
 /* Ininitialise database*/
-const mongodb = new Mongo("SafkaBot2", "mongodb://127.0.0.1:27017")
+const mongodb = new DatabaseHandler("SafkaBot2", "mongodb://127.0.0.1:27017")
 mongodb.newClient();
 mongodb.getDatabase().then((db => {
     foodArchive = new Database(db);
