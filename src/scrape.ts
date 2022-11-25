@@ -21,7 +21,7 @@ export function parseMenu(page: string) {
 
     const modifiedTime = getModifiedTime(root);
 
-    let fullMenu: WeekMenu = { mtime: modifiedTime,  days: [] };
+    const fullMenu: WeekMenu = { mtime: modifiedTime,  days: [] };
 
     const weekNum = getWeekNumber(root);
     // This might break when the year changes
@@ -83,9 +83,9 @@ function getWeekNumber(root: HTMLElement) {
 }
 
 function getDateOfISOWeek(week: number, year: number) {
-    var simple = new Date(Date.UTC(year, 0, 1 + (week - 1) * 7));
-    var dow = simple.getDay();
-    var ISOweekStart = simple;
+    const simple = new Date(Date.UTC(year, 0, 1 + (week - 1) * 7));
+    const dow = simple.getDay();
+    const ISOweekStart = simple;
     if (dow <= 4)
         ISOweekStart.setDate(simple.getDate() - simple.getDay() + 1);
     else
@@ -94,7 +94,7 @@ function getDateOfISOWeek(week: number, year: number) {
 }
 
 function addDays(date: Date, days: number) {
-    var result = new Date(date);
+    const result = new Date(date);
     result.setDate(result.getDate() + days);
     return result;
 }
@@ -109,7 +109,7 @@ function addDays(date: Date, days: number) {
 export async function pollMenu() {
     const resp = await axios.get(TAI_SAFKA_URL);
 
-    let lastModified = resp.headers["last-modified"];
+    const lastModified = resp.headers["last-modified"];
 
     assert(typeof lastModified === "string", new InvalidDateError(lastModified));
     assert(isValidDateString(lastModified), new InvalidDateError(lastModified));

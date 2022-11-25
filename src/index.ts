@@ -1,6 +1,5 @@
 import express from "express";
 import cors from "cors";
-import util from "util";
 import { WeekMenu } from "./types";
 import Poller from "./poller";
 

@@ -18,7 +18,7 @@ class Poller extends EventEmitter {
     // 3 min in ms
     readonly retryTime = 3 * 60 * 1000;
 
-    enableLogs: boolean = true;
+    enableLogs = true;
 
     constructor(options?: PollerOptions) {
         super();
