@@ -2,9 +2,11 @@
   "name": "safkabot",
   "version": "1.0.0",
   "description": "",
-  "main": "src/index.js",
+  "main": "dist/index.js",
   "scripts": {
-    "start": "ts-node src/index.ts"
+    "dev": "ts-node src/index.ts",
+    "start": "node dist/index",
+    "build": "tsc -p ."
   },
   "author": "Tembero",
   "license": "MIT",
