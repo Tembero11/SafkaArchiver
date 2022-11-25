@@ -1,6 +1,5 @@
 export type DayName = "maanantai" | "tiistai" | "keksiviikko" | "torstai" | "perjantai" | "lauantai" | "sunnuntai";
 
-
 export enum Diet {
     L = "L",
     M = "M",
