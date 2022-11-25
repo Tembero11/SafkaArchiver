@@ -1,6 +1,5 @@
-import { DayMenu, Food, WeekMenu } from "../types";
+import { DayMenu, WeekMenu } from "../types";
 import { Db } from 'mongodb';
-import util from "util";
 
 interface Query {
     foodName?: string,
