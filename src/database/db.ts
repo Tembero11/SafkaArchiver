@@ -1,29 +1,33 @@
-import { DayMenu } from "../types";
+import { DayMenu, Food, WeekMenu } from "../types";
 import { Db } from 'mongodb';
 import util from "util";
 
+interface Query {
+    foodName?: string,
+    weekNumber?: number,
+    date?: Date
+}
+
 export class Database {
-    menu?: DayMenu;
+    weekMenu?: WeekMenu;
+    dayMenu?: DayMenu;
     dbObj: Db;
 
-    constructor(dbObj: Db, menu?: DayMenu) {
-        this.menu = menu
+    constructor(dbObj: Db) {
         this.dbObj = dbObj
     }
 
-    async saveEntry(menuObj: DayMenu) {
-        if (this.dbObj != undefined) {
-            const collection = this.dbObj.collection("foods");
-            const res = await collection.insertOne(menuObj);
-            console.log("JUTTUJA::::" + res);
-        }
+    async saveMenus() {
+        const collection = this.dbObj.collection("foods");
+        const menus = { weekMenu: this.weekMenu, dayMenu: this.dayMenu }
+
+        await collection.insertOne(menus);
+        this.retrieveEntry({foodName: "Riisip", weekNumber: this.weekMenu?.weekNumber})
     }
 
-    async retrieveEntry(keyword: string) {
-        console.log(keyword)
-    }
-
-   async readFromDb() {
-        if (this.dbObj != undefined) console.log(util.inspect(await this.dbObj.collection("foods").find({}).toArray(), false, 5, true));
+    async retrieveEntry({ foodName, weekNumber, date }: Query ) {
+        if (foodName) console.log(foodName)
+        if (weekNumber) console.log(weekNumber)
+        if (date) console.log(date)
     }
 }
