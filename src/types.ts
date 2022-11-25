@@ -13,7 +13,7 @@ export interface Food {
 
 export interface DayMenu {
     dayId: Weekday;
-    date: Date
+    date: Date;
     menu: Food[];
 }
 
