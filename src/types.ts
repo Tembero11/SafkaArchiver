@@ -28,6 +28,7 @@ export enum Weekday {
 }
 
 export interface WeekMenu {
-    mtime: Date
-    days: DayMenu[]
+    mtime: Date;
+    weekNumber: number;
+    days: DayMenu[];
 }

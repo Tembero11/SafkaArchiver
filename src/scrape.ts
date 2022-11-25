@@ -20,10 +20,10 @@ export function parseMenu(page: string) {
     
 
     const modifiedTime = getModifiedTime(root);
-
-    const fullMenu: WeekMenu = { mtime: modifiedTime,  days: [] };
-
     const weekNum = getWeekNumber(root);
+
+    const fullMenu: WeekMenu = { mtime: modifiedTime, weekNumber: weekNum, days: [] };
+
     // This might break when the year changes
     const mondayDate = getDateOfISOWeek(weekNum, new Date().getFullYear());
 

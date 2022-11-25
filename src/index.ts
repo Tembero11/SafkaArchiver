@@ -31,16 +31,13 @@ const dbSetup = new DatabaseSetup("SafkaBot2", "mongodb://127.0.0.1:27017");
     poller.on("polled", (menu) => {
         currentMenu = menu;
         
-        /* foodArchive */
-        foodArchive.menu = currentMenu.days[getCurrentDayIndex()];
+        /* foodArchive menus */
+        foodArchive.weekMenu = currentMenu;
+        foodArchive.dayMenu = currentMenu.days[getCurrentDayIndex()];
         /* Add current menu to mongoDb */
-        foodArchive.saveEntry(foodArchive.menu);
-        /* Read for debug */
-        foodArchive.readFromDb();
+        foodArchive.saveMenus();
     });
 })()
-
-
 
 const PORT = process.env.PORT || 5000;
 const app = express();
