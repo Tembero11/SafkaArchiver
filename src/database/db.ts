@@ -1,9 +1,5 @@
-import { DayMenu, WeekMenu } from "../types";
-import fs from "fs";
-import path from "path";
-import { jsonPrettyPrinter } from "../utils";
-import { DatabaseSetup } from "./dbSetup";
-import { MongoClient, Db } from 'mongodb';
+import { DayMenu } from "../types";
+import { Db } from 'mongodb';
 import util from "util";
 
 export class Database {

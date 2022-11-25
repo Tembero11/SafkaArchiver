@@ -1,4 +1,3 @@
-import { copyFileSync } from "fs";
 import { Db, MongoClient } from "mongodb";
 
 export class DatabaseSetup {
