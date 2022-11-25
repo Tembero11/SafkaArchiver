@@ -9,29 +9,38 @@ import { getCurrentDayIndex } from "./utils";
 
 /* Database */
 import { Database } from "./database/db";
-import { DatabaseHandler } from "./database/dbHandler";
+import { DatabaseSetup } from "./database/dbSetup";
+import assert from "assert";
 
 export let currentMenu: WeekMenu;
 let foodArchive: Database;
 
 /* Ininitialise database*/
-const mongodb = new DatabaseHandler("SafkaBot2", "mongodb://127.0.0.1:27017")
-mongodb.newClient();
-mongodb.getDatabase().then((db => {
+const dbSetup = new DatabaseSetup("SafkaBot2", "mongodb://127.0.0.1:27017");
+
+(async function(){
+    await dbSetup.newClient();
+    const db = dbSetup.getDatabase();
+
+    assert(db, new Error("Database undefined"));
+
     foodArchive = new Database(db);
-}))
 
-const poller = new Poller({ enableLogs: true });
-poller.startPolling();
-poller.on("polled", (menu) => {
-    foodArchive.menu = menu.days[getCurrentDayIndex()];
-    /* Add current menu to mongoDb */
-    foodArchive.saveToDb(foodArchive.menu);
-    foodArchive.readFromDb();
+    const poller = new Poller({ enableLogs: true });
+    poller.startPolling();
+    poller.on("polled", (menu) => {
+        currentMenu = menu;
+        
+        /* foodArchive */
+        foodArchive.menu = currentMenu.days[getCurrentDayIndex()];
+        /* Add current menu to mongoDb */
+        foodArchive.saveEntry(foodArchive.menu);
+        /* Read for debug */
+        foodArchive.readFromDb();
+    });
+})()
 
-    currentMenu = menu;
-    console.log(util.inspect(currentMenu, false, 4, true));
-});
+
 
 const PORT = process.env.PORT || 5000;
         
