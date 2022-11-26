@@ -46,7 +46,6 @@ app.use(cors());
 
 app.get("/api/v1/safka/", (req, res) => {
     if (typeof req.query?.date != "string") return;
-
     const date = parseDate(req.query.date);
 
     if (!date) return;
@@ -58,5 +57,18 @@ app.get("/api/v1/safka/", (req, res) => {
         res.json(currentMenu);
     }
 });
+
+enum QueryType {
+    String = "string",
+    Number = "number",
+    Boolean = "boolean",
+}
+interface QuerySchema {
+    [name: string]: QueryType
+}
+
+function parseQuery<A extends QuerySchema, B extends QuerySchema>(query: {[key: string]: any}, required: A, optional: B): (A & Partial<B>) {
+    return {} as (A & Partial<B>)
+}
 
 app.listen(PORT);
