@@ -58,17 +58,4 @@ app.get("/api/v1/safka/", (req, res) => {
     }
 });
 
-enum QueryType {
-    String = "string",
-    Number = "number",
-    Boolean = "boolean",
-}
-interface QuerySchema {
-    [name: string]: QueryType
-}
-
-function parseQuery<A extends QuerySchema, B extends QuerySchema>(query: {[key: string]: any}, required: A, optional: B): (A & Partial<B>) {
-    return {} as (A & Partial<B>)
-}
-
 app.listen(PORT);
