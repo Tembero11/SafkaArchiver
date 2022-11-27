@@ -1,23 +1,29 @@
-import express from "express";
-import cors from "cors";
 import { WeekMenu } from "./types";
 import Poller from "./poller";
-
-
-/* Utils */
-import { getCurrentDayIndex, parseDate } from "./utils";
-
-/* Database */
+import dotenv from "dotenv";
+import { getCurrentDayIndex } from "./utils";
 import { Database } from "./database/db";
 import { DatabaseSetup } from "./database/dbSetup";
 import assert from "assert";
+import { startServer } from "./api/startServer";
+
+
+// Env
+dotenv.config();
+
+const { DISABLE_POLL } = process.env;
+const DB_URL = process.env.DB_URL || "mongodb://127.0.0.1:27017";
+export const PORT = process.env.PORT || 5000;
+
 
 export let currentMenu: WeekMenu;
 let foodArchive: Database;
 
-/* Ininitialise database*/
-const dbSetup = new DatabaseSetup("SafkaBot2", "mongodb://127.0.0.1:27017");
+// Ininitialise database
+const dbSetup = new DatabaseSetup("SafkaBot2", DB_URL);
 
+
+// Async setup code
 (async function(){
     await dbSetup.newClient();
     const db = dbSetup.getDatabase();
@@ -26,37 +32,20 @@ const dbSetup = new DatabaseSetup("SafkaBot2", "mongodb://127.0.0.1:27017");
 
     foodArchive = new Database(db);
 
-    const poller = new Poller({ enableLogs: true });
-    poller.startPolling();
-    poller.on("polled", (menu) => {
-        currentMenu = menu;
-        
-        /* foodArchive menus */
-        foodArchive.weekMenu = currentMenu;
-        foodArchive.dayMenu = currentMenu.days[getCurrentDayIndex()];
-        /* Add current menu to mongoDb */
-        foodArchive.saveMenus();
-    });
-})()
-
-const PORT = process.env.PORT || 5000;
-const app = express();
-
-app.use(cors());
-
-app.get("/api/v1/safka/", (req, res) => {
-    if (typeof req.query?.date != "string") return;
-
-    const date = parseDate(req.query.date);
-
-    if (!date) return;
-
-    console.log(date.toLocaleDateString());
-
-
-    if (currentMenu) {
-        res.json(currentMenu);
+    if (!DISABLE_POLL) {
+        const poller = new Poller({ enableLogs: true });
+        poller.on("polled", (menu) => {
+            currentMenu = menu;
+            
+            // foodArchive menus
+            foodArchive.weekMenu = currentMenu;
+            foodArchive.dayMenu = currentMenu.days[getCurrentDayIndex()];
+            // Add current menu to MongoDb
+            foodArchive.saveMenus();
+        });
+        poller.startPolling();
     }
-});
 
-app.listen(PORT);
+    // Start the http api server
+    startServer(Number(PORT));
+})()
