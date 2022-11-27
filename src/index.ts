@@ -5,7 +5,7 @@ import Poller from "./poller";
 
 
 /* Utils */
-import { getCurrentDayIndex, parseDate } from "./utils";
+import { getCurrentDayIndex } from "./utils";
 
 /* Database */
 import { Database } from "./database/db";
@@ -48,12 +48,21 @@ app.use(cors());
 
 app.get("/api/v1/safka/", (req, res) => {
 
-    const query = parseQuery(req.query, {test: QueryType.Integer}, {});
-    query.test
-    console.log("run")
+    const query = parseQuery(req.query, {
+        from: QueryType.Int,
+        to: QueryType.Int,
+    }, {
+        isToday: QueryType.Boolean,
+        date: QueryType.Date
+    });
 
+    if (typeof query == "string") {
+        return res.json({msg: query});
+    }
 
-    res.send("hello")
+    res.json(query);
+
+    console.log(query)
 });
 
 app.listen(PORT);

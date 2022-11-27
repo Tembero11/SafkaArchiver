@@ -4,11 +4,7 @@ export enum QueryType {
     String = "string",
     Date = "date",
     Float = "float",
-    NegativeFloat = "negativeFloat",
-    PositiveFloat = "positiveFloat",
     Int = "int",
-    NegativeInt = "negativeInt",
-    PositiveInt = "positiveInt",
     Boolean = "boolean",
 }
 
@@ -16,8 +12,7 @@ interface IQueryType {
     string: string
     boolean: boolean
     int: number
-    negativeInt: number
-    positiveInt: number
+    float: number
     date: Date
 }
 
@@ -37,29 +32,43 @@ export function parseQuery<A extends QueryTemplate, B extends QueryTemplate>(
     query: UnknownQuery,
     required: A,
     optional: B
-): ParseQueryResult<A, B> {
-    for (const template of Object.entries(required)) {
-        const exists = Object.hasOwn(query, template[0]);
-        assert(exists);
-        checkAgainstTemplate(query[template[0]], ...template);
+): ParseQueryResult<A, B> | string {
+    const result: {[key: string]: unknown} = {};
+
+    try {
+        for (const template of Object.entries(required)) {
+            const exists = Object.hasOwn(query, template[0]);
+            assert(exists);
+            result[template[0]] = checkAgainstTemplate(query[template[0]], ...template);
+        }
+        for (const template of Object.entries(optional)) {
+            const exists = Object.hasOwn(query, template[0]);
+            if (!exists) continue;
+            result[template[0]] = checkAgainstTemplate(query[template[0]], ...template);
+        }
+    }catch(err) {
+        // TODO: detect the error type so it can be sent to the user.
+        return "Unknown error";
     }
-    // FOR TESTING
-    return "" as unknown as any;
+    return result as ParseQueryResult<A, B>;
 }
 
 function checkAgainstTemplate(queryValue: unknown, name: string, type: keyof IQueryType) {
-       switch (type) {
+    switch (type) {
         case QueryType.Boolean:
-            return parseBoolean(queryValue)
+            return parseQueryBoolean(queryValue);
         case QueryType.Int:
-            return parseInteger(queryValue)
-       
+            return parseQueryInteger(queryValue);
+        case QueryType.Float:
+            return parseQueryFloat(queryValue);
+        case QueryType.Date:
+            return parseQueryDate(queryValue);
         default:
             return queryValue as string
-       }
+    }
 }
 
-function parseBoolean(value: unknown) {
+function parseQueryBoolean(value: unknown) {
     if (typeof value != "string") throw new Error("");
     
     if (value == "true") {
@@ -71,13 +80,42 @@ function parseBoolean(value: unknown) {
     throw new Error("");
 }
 
-function parseInteger(value: unknown) {
-    const num = Number(value);
-    const isNumeric = !isNaN(num);
-    assert(isNumeric);
-    
-    const isInteger = Number.isInteger(num);
-    assert(isInteger);
+function isNumeric(value: unknown) {
+    if (typeof value != "string") return false;
+    return !isNaN(value as unknown as number) && !isNaN(parseFloat(value));
+}
+
+function parseQueryInteger(value: unknown) {
+    const isNum = isNumeric(value);
+    assert(isNum);
+
+    const num = +(value as string);
+
+    assert(Number.isInteger(num));
 
     return num;
+}
+function parseQueryFloat(value: unknown) {
+    const isNum = isNumeric(value);
+    assert(isNum);
+
+    const num = +(value as string);
+    return num;
+}
+
+export function parseQueryDate(value: unknown) {
+    assert(typeof value == "string");
+    const [ dayStr, monthStr, yearStr ] = value.split(".");
+
+    assert(isValidDigit(dayStr) && isValidDigit(monthStr) && isValidDigit(yearStr, 4, 4));
+
+    const day = parseInt(dayStr);
+    const month = parseInt(monthStr);
+    const year = parseInt(yearStr);
+
+    return new Date(year, month - 1, day);
+}
+
+export function isValidDigit(digitStr: string, minAllowedLength = 1, maxAllowedLength = 2) {
+    return new RegExp(`^[0-9]{${minAllowedLength},${maxAllowedLength}}$`).test(digitStr);
 }

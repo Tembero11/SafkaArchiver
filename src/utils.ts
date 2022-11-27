@@ -9,21 +9,3 @@ export function jsonPrettyPrinter(jsonObj: object) {
 export function isProduction() {
     return process.env.NODE_ENV == "production";
 }
-
-export function parseDate(dateStr: string) {
-    const [ dayStr, monthStr, yearStr ] = dateStr.split(".");
-
-    if (
-        !(isValidDigit(dayStr) && isValidDigit(monthStr) && isValidDigit(yearStr, 4, 4))
-    ) return;
-
-    const day = parseInt(dayStr);
-    const month = parseInt(monthStr);
-    const year = parseInt(yearStr);
-
-    return new Date(year, month - 1, day);
-}
-
-export function isValidDigit(digitStr: string, minAllowedLength = 1, maxAllowedLength = 2) {
-    return new RegExp(`^[0-9]{${minAllowedLength},${maxAllowedLength}}$`).test(digitStr);
-}
