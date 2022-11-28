@@ -1,19 +1,17 @@
-import axios from "axios";
 import assert from "assert";
 import { HTMLElement, parse } from "node-html-parser";
-import { ElementUndefinedError, InvalidDateError } from "./errors";
-import { Diet, Weekday, WeekMenu } from "./types";
-
-const TAI_SAFKA_URL = "https://www.turkuai.fi/turun-ammatti-instituutti/opiskelijalle/ruokailu-ja-ruokalistat/ruokalista-juhannuskukkula-topseli";
+import { ElementUndefinedError } from "../errors";
+import { Diet, Weekday, WeekMenu } from "../types";
+import { isValidDateString } from "../utils";
 
 /**
  * 
- * @param pageBody HTML page body
+ * @param webpage HTML page as string
  * @throws { ElementUndefinedError } if any of the elements are not found.
  * @returns Scraped data from the page body
  */
-export function parseMenu(page: string) {
-    const root = parse(page);
+export function parseMenuFrom(webpage: string) {
+    const root = parse(webpage);
 
     const dayContainers = root.querySelectorAll("tr");
     assert(dayContainers, new ElementUndefinedError("dayContainers"));
@@ -100,22 +98,7 @@ function addDays(date: Date, days: number) {
 }
 
 
-/**
- * Sends a GET request
- * @throws 
- * @returns `last-modified` header converted to a date
- * @returns page body
- */
-export async function pollMenu() {
-    const resp = await axios.get(TAI_SAFKA_URL);
 
-    const lastModified = resp.headers["last-modified"];
-
-    assert(typeof lastModified === "string", new InvalidDateError(lastModified));
-    assert(isValidDateString(lastModified), new InvalidDateError(lastModified));
-
-    return { currentPage: resp.data, lastModified: new Date(lastModified) };
-}
 
 /**
  * 
@@ -148,6 +131,3 @@ function parseFood(foodName: string) {
     return result;
 }
 
-function isValidDateString(date: string) {
-    return new Date(date).toString() != "Invalid Date";
-}

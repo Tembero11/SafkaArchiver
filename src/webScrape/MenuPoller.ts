@@ -1,17 +1,23 @@
+import axios from "axios";
 import ms from "ms";
+import assert from "node:assert";
 import { EventEmitter } from "node:events";
-import { parseMenu, pollMenu } from "./scrape";
-import { WeekMenu } from "./types";
+import { InvalidDateError } from "../errors";
+import { parseMenuFrom } from "./scrape";
+import { WeekMenu } from "../types";
+import { isValidDateString } from "../utils";
+
+const TAI_SAFKA_URL = "https://www.turkuai.fi/turun-ammatti-instituutti/opiskelijalle/ruokailu-ja-ruokalistat/ruokalista-juhannuskukkula-topseli";
 
 interface PollerOptions {
     enableLogs?: boolean
 }
 
-declare interface Poller {
+declare interface MenuPoller {
     on(event: "polled", listener: (menu: WeekMenu) => void): this;
 }
 
-class Poller extends EventEmitter {
+class MenuPoller extends EventEmitter {
     isRunning = false;
     // 16 min in ms
     readonly defaultTime = 16 * 60 * 1000;
@@ -19,6 +25,11 @@ class Poller extends EventEmitter {
     readonly retryTime = 3 * 60 * 1000;
 
     enableLogs = true;
+
+    /**
+     * Contains the latest menu loaded.
+     */
+    private latestMenu: WeekMenu | undefined;
 
     constructor(options?: PollerOptions) {
         super();
@@ -37,11 +48,12 @@ class Poller extends EventEmitter {
     }
 
     private async poll() {
+        // Check that the poller is running
         if (!this.isRunning) return;
 
         let pollResult;
         try {
-            pollResult = await pollMenu();
+            pollResult = await this.getWebpage();
         } catch (err) {
             if (this.enableLogs) {
                 console.log(err);
@@ -62,25 +74,54 @@ class Poller extends EventEmitter {
         
         let menu;
         try {
-            menu = parseMenu(currentPage);
+            menu = parseMenuFrom(currentPage);
         } catch (err) {
             if (this.enableLogs) {
                 console.log(err);
                 console.log("Page load failed. Retrying in " + ms(this.retryTime, { long: true }));
             }
-            console.log(err);
             setTimeout(() => this.poll.bind(this)(), this.retryTime);
             return;
         }
 
+        this.latestMenu = menu;
         this.emit("polled", menu);
         
         setTimeout(() => this.poll.bind(this)(),  timeUntilNextPoll);
     }
 
+
+    /**
+     * Sends a GET request
+     * @returns `last-modified` header converted to a date
+     * @returns current page's HTML
+     */
+    async getWebpage() {
+        const resp = await axios.get(TAI_SAFKA_URL);
+
+        const lastModified = resp.headers["last-modified"];
+
+        assert(typeof lastModified === "string", new InvalidDateError(lastModified));
+        assert(isValidDateString(lastModified), new InvalidDateError(lastModified));
+
+        return { currentPage: resp.data as string, lastModified: new Date(lastModified) };
+    }
+
+    /**
+     * Calculates the next time until the page should be polled.
+     * @param lastModified
+     */
     getNextPollTime(lastModified: Date) {
-        return this.defaultTime - (new Date().getTime() - lastModified.getTime())
+        return this.defaultTime - (new Date().getTime() - lastModified.getTime());
+    }
+
+    /**
+     * @throws {AssertionError} if there is no menu loaded.
+     */
+    getLatestMenu() {
+        assert(this.latestMenu);
+        return this.latestMenu;
     }
 }
 
-export default Poller;
+export default MenuPoller;

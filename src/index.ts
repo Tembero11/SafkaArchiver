@@ -1,5 +1,5 @@
 import { WeekMenu } from "./types";
-import Poller from "./poller";
+import MenuPoller from "./webScrape/MenuPoller";
 import dotenv from "dotenv";
 import { getCurrentDayIndex } from "./utils";
 import { Database } from "./database/db";
@@ -33,7 +33,7 @@ const dbSetup = new DatabaseSetup("SafkaBot2", DB_URL);
     foodArchive = new Database(db);
 
     if (!DISABLE_POLL) {
-        const poller = new Poller({ enableLogs: true });
+        const poller = new MenuPoller({ enableLogs: true });
         poller.on("polled", (menu) => {
             currentMenu = menu;
             

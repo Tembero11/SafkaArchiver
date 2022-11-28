@@ -27,3 +27,7 @@ export function parseDate(dateStr: string) {
 export function isValidDigit(digitStr: string, minAllowedLength = 1, maxAllowedLength = 2) {
     return new RegExp(`^[0-9]{${minAllowedLength},${maxAllowedLength}}$`).test(digitStr);
 }
+
+export function isValidDateString(date: string) {
+    return new Date(date).toString() != "Invalid Date";
+}
