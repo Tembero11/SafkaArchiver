@@ -1,24 +1,18 @@
 import { DayMenu, Menus, WeekMenu } from "../types";
 import { Db, MongoClient } from 'mongodb';
-import { EventEmitter } from "node:events";
 
 interface DatabaseOptions {
     dbUrl: string
     dbName: string
 }
 
-export declare interface Database {
-    on(event: "connected", listener: (archiver: Archiver) => void): this;
-}
-
-export class Database extends EventEmitter {
+export class Database {
     dbUrl: string;
     dbName: string; 
     _client?: MongoClient = undefined;
     _db?: Db = undefined;
 
     constructor(options: DatabaseOptions) {
-        super();
         this.dbUrl = options.dbUrl;
         this.dbName = options.dbName;
     }
@@ -40,17 +34,12 @@ export class Database extends EventEmitter {
             this._db = client.db(this.dbName);
             this._client = client;
 
-            this.startArchiving();
-
+            return new Archiver({dbUrl: this.dbUrl, dbName: this.dbName}, this.database as Db);
         } catch (err) {
             console.log(`Error happened. Shutting down. Logs: ${err}`);
             process.exit(1);
         }
 
-    }
-
-    private async startArchiving() {
-        this.emit("connected", new Archiver({dbUrl: this.dbUrl, dbName: this.dbName}, this.database as Db));
     }
 
     get database() {
@@ -95,7 +84,7 @@ export class Archiver extends Database {
     async retrieveEntry(query: Query ) {
         if (this._db !== undefined) {
             const xd: unknown = await this._db.collection("foods").findOne({"dayMenu.menu": {$elemMatch: {"name": "Lohimurekepihvit"}}})
-            console.log((xd as Menus).weekMenu)
+
             if (query.weekNumber) console.log(query.weekNumber)
             if (query.date) console.log(query.date)
         }
