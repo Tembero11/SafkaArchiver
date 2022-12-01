@@ -1,32 +1,103 @@
-import { DayMenu, WeekMenu } from "../types";
-import { Db } from 'mongodb';
+import { DayMenu, Menus, WeekMenu } from "../types";
+import { Db, MongoClient } from 'mongodb';
+import { EventEmitter } from "node:events";
+
+interface DatabaseOptions {
+    dbUrl: string
+    dbName: string
+}
+
+export declare interface Database {
+    on(event: "connected", listener: (archiver: Archiver) => void): this;
+}
+
+export class Database extends EventEmitter {
+    dbUrl: string;
+    dbName: string; 
+    _client?: MongoClient = undefined;
+    _db?: Db = undefined;
+
+    constructor(options: DatabaseOptions) {
+        super();
+        this.dbUrl = options.dbUrl;
+        this.dbName = options.dbName;
+    }
+    
+    async newClient() {
+        // Don't do a new client if we already have a client
+        if (this.client !== undefined) {
+            return
+        }
+
+        console.log(`\nAttempting connection to "${this.dbUrl}"...\nProgram will exit if connection does not succeed\n`)
+        try {
+            // Creating a client
+            const client = await MongoClient.connect(this.dbUrl);
+
+            console.log(`Connected successfully to server with database "${this.dbName}"\n`);
+
+            // Create a database object used to modify or read the database
+            this._db = client.db(this.dbName);
+            this._client = client;
+
+            this.startArchiving();
+
+        } catch (err) {
+            console.log(`Error happened. Shutting down. Logs: ${err}`);
+            process.exit(1);
+        }
+
+    }
+
+    private async startArchiving() {
+        this.emit("connected", new Archiver({dbUrl: this.dbUrl, dbName: this.dbName}, this.database as Db));
+    }
+
+    get database() {
+        if (this._db !== undefined)  return this._db;
+    }
+
+    get client() {
+        return this._client;
+    }
+   
+}
+
+///////////////////////////////////////////////////////////
 
 interface Query {
-    foodName?: string,
-    weekNumber?: number,
+    foodName?: string
+    weekNumber?: number
     date?: Date
 }
 
-export class Database {
+export class Archiver extends Database {
     weekMenu?: WeekMenu;
     dayMenu?: DayMenu;
-    dbObj: Db;
+    _db?: Db = undefined
 
-    constructor(dbObj: Db) {
-        this.dbObj = dbObj
+    constructor(options: DatabaseOptions, db: Db) {
+        super(options);
+        this._db = db
+        
     }
 
     async saveMenus() {
-        const collection = this.dbObj.collection("foods");
-        const menus = { weekMenu: this.weekMenu, dayMenu: this.dayMenu }
+        if (this._db !== undefined) {
+            const collection = this._db.collection("foods");
+            const menus: Menus = { weekMenu: this.weekMenu as WeekMenu, dayMenu: this.dayMenu as DayMenu }
 
-        await collection.insertOne(menus);
-        this.retrieveEntry({foodName: "Riisip", weekNumber: this.weekMenu?.weekNumber})
+            await collection.insertOne(menus);
+            this.retrieveEntry({foodName: "Riisip", weekNumber: this.weekMenu?.weekNumber})
+        }
     }
 
-    async retrieveEntry({ foodName, weekNumber, date }: Query ) {
-        if (foodName) console.log(foodName)
-        if (weekNumber) console.log(weekNumber)
-        if (date) console.log(date)
+    async retrieveEntry(query: Query ) {
+        if (this._db !== undefined) {
+            const xd: unknown = await this._db.collection("foods").findOne({"dayMenu.menu": {$elemMatch: {"name": "Lohimurekepihvit"}}})
+            console.log((xd as Menus).weekMenu)
+            if (query.weekNumber) console.log(query.weekNumber)
+            if (query.date) console.log(query.date)
+        }
     }
 }
