@@ -111,7 +111,7 @@ function parseFood(foodName: string) {
     let name = trimmed.substring(0, 1).toUpperCase() + trimmed.substring(1);
     const diets: Diet[] = [];
 
-    const match = foodName.match(/\(?(L|G|M| |,){1,}\)?$/);
+    const match = foodName.match(/\(?(L|G|M|\s|,){1,}\)?$/);
     if (match) {
         name = name.replace(match[0], "").trim();
         const dietUnparsed = match[0].trim()
