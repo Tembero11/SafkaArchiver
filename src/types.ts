@@ -34,8 +34,3 @@ export interface WeekMenu {
     weekNumber: number;
     days: DayMenu[];
 }
-
-export interface Menus {
-    weekMenu: WeekMenu
-    dayMenu: DayMenu
-}

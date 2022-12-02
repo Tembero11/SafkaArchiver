@@ -1,5 +1,6 @@
-import { DayMenu, Menus, WeekMenu } from "../types";
+import { DayMenu, WeekMenu } from "../types";
 import { Db, MongoClient } from 'mongodb';
+import { DbDay } from "./dbTypes";
 
 interface DatabaseOptions {
     dbUrl: string
@@ -17,7 +18,7 @@ export class Database {
         this.dbName = options.dbName;
     }
     
-    async newClient() {
+    async connect() {
         // Don't do a new client if we already have a client
         if (this.client !== undefined) {
             return
@@ -74,10 +75,10 @@ export class Archiver extends Database {
     async saveMenus() {
         if (this._db !== undefined) {
             const collection = this._db.collection("foods");
-            const menus: Menus = { weekMenu: this.weekMenu as WeekMenu, dayMenu: this.dayMenu as DayMenu }
+            const day: DbDay = { version: 0, date: new Date(),  }
 
             await collection.insertOne(menus);
-            this.retrieveEntry({foodName: "Riisip", weekNumber: this.weekMenu?.weekNumber})
+            // this.retrieveEntry({foodName: "Riisip", weekNumber: this.weekMenu?.weekNumber})
         }
     }
 

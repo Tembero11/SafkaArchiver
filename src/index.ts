@@ -3,6 +3,7 @@ import MenuPoller from "./webScrape/MenuPoller";
 import dotenv from "dotenv";
 import { getCurrentDayIndex } from "./utils";
 import { Archiver, Database } from "./database/db";
+import { hashMenus } from "./database/dbUtils";
 import assert from "assert";
 import { startServer } from "./api/startServer";
 
@@ -32,7 +33,7 @@ export let currentMenu: WeekMenu;
 
     let archiver: Archiver | undefined;
     if (!DISABLE_DB) {
-        archiver = await db.newClient();
+        archiver = await db.connect();
         assert(archiver, "Archiver is undefined");
     }
 
