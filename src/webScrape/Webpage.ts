@@ -1,7 +1,8 @@
 import parse, { HTMLElement } from "node-html-parser";
 import assert from "node:assert";
+import objectHash from "object-hash";
 import { ElementUndefinedError } from "../errors";
-import { DayMenu, Diet, Weekday, WeekMenu } from "../types";
+import { DayMenu, WeekMenu } from "../types";
 import { addDaysToDate, getDateOfISOWeek, isValidDateString } from "../utils";
 
 export default class Webpage {
@@ -27,7 +28,7 @@ export default class Webpage {
         const modifiedTime = this.getModifiedTime();
         const weekNum = this.getWeekNumber();
 
-        const fullMenu: WeekMenu = { mtime: modifiedTime, weekNumber: weekNum, days: [] };
+        const fullMenu: WeekMenu = { modifiedTime, weekNumber: weekNum, days: [] };
 
         // This might break when the year changes
         const mondayDate = getDateOfISOWeek(weekNum, new Date().getFullYear());
@@ -36,7 +37,7 @@ export default class Webpage {
             const date = addDaysToDate(mondayDate, i);
             const dayHTML = dayContainers.at(i);
 
-            const day: DayMenu = {
+            const day: Omit<DayMenu, "hash"> = {
                 dayId: i,
                 date,
                 menu: []   
@@ -44,7 +45,7 @@ export default class Webpage {
 
             // if the html for the day is not found push the empty day to the array
             if (!dayHTML) {
-                fullMenu.days.push(day);
+                fullMenu.days.push({hash: null, ...day});
                 continue;
             }
             // If not get the foods
@@ -57,7 +58,7 @@ export default class Webpage {
             day.menu.push(...foods);
 
             // Add the day to the week
-            fullMenu.days.push(day);
+            fullMenu.days.push({hash: objectHash(day), ...day});
         }
         return fullMenu;
     }
@@ -102,25 +103,42 @@ export default class Webpage {
         const trimmed = foodName.trim();
 
         let name = trimmed.substring(0, 1).toUpperCase() + trimmed.substring(1);
-        const diets: Diet[] = [];
+        
+        const result = {
+            name,
+            isLactoseFree: false,
+            isDairyFree: false,
+            isGlutenFree: false,
+        }
 
         const match = foodName.match(/\(?(L|G|M|\s|,){1,}\)?$/);
         if (match) {
             name = name.replace(match[0], "").trim();
             const dietUnparsed = match[0].trim()
 
-            const dietParsed = dietUnparsed.replaceAll(/\(|,| |\.|\)/g, "").split("");
+            const dietParsed = dietUnparsed.replaceAll(/\(|,|\s|\.|\)/g, "").split("");
 
             for (const diet of dietParsed) {
-                if (!Object.hasOwn(Diet, diet)) continue;
-                diets.push(diet as Diet);
+                switch (diet) {
+                    case "L":
+                        result.isLactoseFree = true;
+                        break;
+                    case "M":
+                        result.isDairyFree = true;
+                        break;
+                    case "G":
+                        result.isGlutenFree = true;
+                        break;
+                    default:
+                        break;
+                }
             }
         }
 
-        const result = {
-            name,
-            diets
-        }
+
+        // Update the name
+        result.name = name;
+
         return result;
     }
 }

@@ -1,17 +1,15 @@
-export enum Diet {
-    L = "L",
-    M = "M",
-    G = "G",
-}
-
 export interface Food {
     name: string;
-    diets: Diet[];
+    isLactoseFree: boolean;
+    isDairyFree: boolean;
+    isGlutenFree: boolean;
 }
 
 
 
 export interface DayMenu {
+    // If the day has no menu the hash will be null
+    hash: string | null;
     dayId: Weekday;
     date: Date;
     menu: Food[];
@@ -28,7 +26,7 @@ export enum Weekday {
 }
 
 export interface WeekMenu {
-    mtime: Date;
+    modifiedTime: Date;
     weekNumber: number;
     days: DayMenu[];
 }
