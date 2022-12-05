@@ -35,7 +35,7 @@ api.get("/v1/menu/:dayId", (req, res) => {
   }
 });
 
-app.get("*", function (req, res) {
+api.get("*", function (req, res) {
   apiResponse(res, 404);
 });
 
