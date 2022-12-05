@@ -1,15 +1,17 @@
 import cors from "cors";
-import express from "express";
+import express, { Router } from "express";
 import { getDayFromWeek } from "../foodUtils";
 import { currentMenu } from "../index";
 import { getCurrentDayIndex } from "../utils";
 
 export const app = express();
 
-app.use(cors());
 app.disable("x-powered-by");
 
-app.get("/api/v1/menu/now", (req, res) => {
+const api = Router();
+api.use(cors());
+
+api.get("/v1/menu", (req, res) => {
   const format = req.query.format == "true";
 
   const result = format ? JSON.stringify(currentMenu, null, 2) : JSON.stringify(currentMenu);
@@ -17,7 +19,7 @@ app.get("/api/v1/menu/now", (req, res) => {
   res.status(200).type("application/json").end(result);
 });
 
-app.get("/api/v1/menu/today", (req, res) => {
+api.get("/v1/menu/today", (req, res) => {
   const format = req.query.format == "true";
 
   const today = getDayFromWeek(currentMenu, getCurrentDayIndex());
@@ -27,6 +29,11 @@ app.get("/api/v1/menu/today", (req, res) => {
   res.status(200).type("application/json").end(result);
 });
 
-export function startServer(port: number) {
+interface StartServerOptions {
+  apiBaseRoute?: string
+}
+
+export function startServer(port: number, options?: StartServerOptions) {
+  app.use(options?.apiBaseRoute || "/api", api);
   app.listen(port); 
 }

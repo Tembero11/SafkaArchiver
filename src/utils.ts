@@ -31,3 +31,26 @@ export function isValidDigit(digitStr: string, minAllowedLength = 1, maxAllowedL
 export function isValidDateString(date: string) {
     return new Date(date).toString() != "Invalid Date";
 }
+
+/**
+ * 
+ * @param date Original Date
+ * @param days Amount of days to add
+ * @returns A new `Date` object with the days added
+ */
+export function addDaysToDate(date: Date, days: number) {
+    const result = new Date(date);
+    result.setDate(result.getDate() + days);
+    return result;
+}
+
+export function getDateOfISOWeek(week: number, year: number) {
+    const simple = new Date(Date.UTC(year, 0, 1 + (week - 1) * 7));
+    const dow = simple.getDay();
+    const ISOweekStart = simple;
+    if (dow <= 4)
+        ISOweekStart.setDate(simple.getDate() - simple.getDay() + 1);
+    else
+        ISOweekStart.setDate(simple.getDate() + 8 - simple.getDay());
+    return ISOweekStart;
+}

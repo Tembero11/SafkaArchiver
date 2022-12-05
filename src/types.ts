@@ -1,36 +1,32 @@
-export type DayName = "maanantai" | "tiistai" | "keksiviikko" | "torstai" | "perjantai" | "lauantai" | "sunnuntai";
-
-export enum Diet {
-    L = "L",
-    M = "M",
-    G = "G",
-}
-
 export interface Food {
     name: string;
-    diets: Diet[];
+    isLactoseFree: boolean;
+    isDairyFree: boolean;
+    isGlutenFree: boolean;
 }
 
 
 
 export interface DayMenu {
+    // If the day has no menu the hash will be null
+    hash: string | null;
     dayId: Weekday;
     date: Date;
     menu: Food[];
 }
 
 export enum Weekday {
-    Monday = "mon",
-    Tuesday = "tues",
-    Wednesday = "wed",
-    Thursday = "thurs",
-    Friday = "fri",
-    Saturday = "sat",
-    Sunday = "sun"
+    Monday,
+    Tuesday,
+    Wednesday,
+    Thursday,
+    Friday,
+    Saturday,
+    Sunday
 }
 
 export interface WeekMenu {
-    mtime: Date;
+    modifiedTime: Date;
     weekNumber: number;
     days: DayMenu[];
 }
