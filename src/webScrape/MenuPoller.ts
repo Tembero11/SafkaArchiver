@@ -3,9 +3,9 @@ import ms from "ms";
 import assert from "node:assert";
 import { EventEmitter } from "node:events";
 import { InvalidDateError } from "../errors";
-import { parseMenuFrom } from "./scrape";
 import { WeekMenu } from "../types";
 import { isValidDateString } from "../utils";
+import Webpage from "./Webpage";
 
 const TAI_SAFKA_URL = "https://www.turkuai.fi/turun-ammatti-instituutti/opiskelijalle/ruokailu-ja-ruokalistat/ruokalista-juhannuskukkula-topseli";
 
@@ -59,34 +59,40 @@ class MenuPoller extends EventEmitter {
                 console.log(err);
                 console.log("Page load failed. Retrying in " + ms(this.retryTime, { long: true }));
             }
-            setTimeout(() => this.poll.bind(this)(), this.retryTime);
-            
+            this.pollNextIn(this.retryTime);
             return;
         }
 
-        const { currentPage, lastModified } = pollResult;
+        const { document, lastPossiblyModified } = pollResult;
 
-        const timeUntilNextPoll = this.getNextPollTime(lastModified);
+        const timeUntilNextPoll = this.getNextPollTime(lastPossiblyModified);
 
         if (this.enableLogs) {
             console.log("Page will be polled in " + ms(timeUntilNextPoll, { long: true }));
         }
+
+        const webpage = new Webpage(TAI_SAFKA_URL, document);
         
         let menu;
         try {
-            menu = parseMenuFrom(currentPage);
+            menu = webpage.parse();
         } catch (err) {
             if (this.enableLogs) {
                 console.log(err);
                 console.log("Page load failed. Retrying in " + ms(this.retryTime, { long: true }));
             }
-            setTimeout(() => this.poll.bind(this)(), this.retryTime);
+            this.pollNextIn(this.retryTime)
             return;
         }
 
         this.latestMenu = menu;
+
         this.emit("polled", menu);
         
+        this.pollNextIn(timeUntilNextPoll)
+    }
+
+    pollNextIn(timeUntilNextPoll: number) {
         setTimeout(() => this.poll.bind(this)(),  timeUntilNextPoll);
     }
 
@@ -104,7 +110,16 @@ class MenuPoller extends EventEmitter {
         assert(typeof lastModified === "string", new InvalidDateError(lastModified));
         assert(isValidDateString(lastModified), new InvalidDateError(lastModified));
 
-        return { currentPage: resp.data as string, lastModified: new Date(lastModified) };
+        return {
+            /**
+             * Page HTML as a string
+             */
+            document: resp.data as string,
+            /**
+             * The date when the webpage was last possibly modified
+             */
+            lastPossiblyModified: new Date(lastModified)
+        };
     }
 
     /**

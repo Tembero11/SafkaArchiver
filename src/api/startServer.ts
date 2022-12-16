@@ -1,32 +1,50 @@
 import cors from "cors";
-import express from "express";
+import express, { Router } from "express";
 import { getDayFromWeek } from "../foodUtils";
 import { currentMenu } from "../index";
+import { Weekday } from "../types";
 import { getCurrentDayIndex } from "../utils";
+import { apiResponse } from "./apiResponse";
 
 export const app = express();
 
-app.use(cors());
 app.disable("x-powered-by");
 
-app.get("/api/v1/menu/now", (req, res) => {
-  const format = req.query.format == "true";
+const api = Router();
+api.use(cors());
 
-  const result = format ? JSON.stringify(currentMenu, null, 2) : JSON.stringify(currentMenu);
-
-  res.status(200).type("application/json").end(result);
+api.get("/v1/menu", (req, res) => {
+  apiResponse(res, 200, { ...currentMenu });
 });
 
-app.get("/api/v1/menu/today", (req, res) => {
-  const format = req.query.format == "true";
-
+api.get("/v1/menu/today", (req, res) => {
   const today = getDayFromWeek(currentMenu, getCurrentDayIndex());
 
-  const result = format ? JSON.stringify(today, null, 2) : JSON.stringify(today);
-
-  res.status(200).type("application/json").end(result);
+  apiResponse(res, 200, { ...today });
 });
 
-export function startServer(port: number) {
-  app.listen(port); 
+
+api.get("/v1/menu/:dayId", (req, res) => {
+  const dayId = +req.params.dayId;
+
+  if (Object.hasOwn(Weekday, dayId)) {
+    const day = getDayFromWeek(currentMenu, dayId);
+    apiResponse(res, 200, { ...day });
+  } else {
+    apiResponse(res, 400, { msg: "Invalid dayId" })
+  }
+});
+
+api.get("*", function (req, res) {
+  apiResponse(res, 404);
+});
+
+
+interface StartServerOptions {
+  apiBaseRoute?: string
+}
+
+export function startServer(port: number, options?: StartServerOptions) {
+  app.use(options?.apiBaseRoute || "/api", api);
+  app.listen(port);
 }
