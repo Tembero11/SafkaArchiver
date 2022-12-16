@@ -1,7 +1,6 @@
 import { WeekMenu } from "./types";
 import MenuPoller from "./webScrape/MenuPoller";
 import dotenv from "dotenv";
-import { getCurrentDayIndex } from "./utils";
 import { Archiver, Database } from "./database/db";
 import { hashMenus } from "./database/dbUtils";
 import assert from "assert";
@@ -44,10 +43,8 @@ export let currentMenu: WeekMenu;
 
         // Check that the database is not disabled
         if (!DISABLE_DB && archiver) {
-            // foodArchive menus                                                   
             archiver.weekMenu = currentMenu;
-            archiver.dayMenu = currentMenu.days[getCurrentDayIndex()];
-            // Add current menu to MongoDb                                         
+            // Add current menu to MongoDb
             archiver.saveMenus();
         }
     });

@@ -11,8 +11,6 @@ export interface Food {
     diets: Diet[];
 }
 
-
-
 export interface DayMenu {
     dayId: Weekday;
     date: Date;

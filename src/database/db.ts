@@ -1,6 +1,7 @@
-import { DayMenu, WeekMenu } from "../types";
-import { Db, MongoClient } from 'mongodb';
-import { DbDay } from "./dbTypes";
+import { WeekMenu } from "../types";
+import { Db, MongoClient, ObjectId } from 'mongodb';
+import { DatabaseMenu, DatabaseWeek } from "./dbTypes";
+import { getCurrentDayIndex } from "../utils";
 
 interface DatabaseOptions {
     dbUrl: string
@@ -20,9 +21,7 @@ export class Database {
     
     async connect() {
         // Don't do a new client if we already have a client
-        if (this.client !== undefined) {
-            return
-        }
+        if (this.client !== undefined) return
 
         console.log(`\nAttempting connection to "${this.dbUrl}"...\nProgram will exit if connection does not succeed\n`)
         try {
@@ -63,7 +62,6 @@ interface Query {
 
 export class Archiver extends Database {
     weekMenu?: WeekMenu;
-    dayMenu?: DayMenu;
     _db?: Db = undefined
 
     constructor(options: DatabaseOptions, db: Db) {
@@ -72,13 +70,37 @@ export class Archiver extends Database {
         
     }
 
+    // Converts a WeekMenu to be suited for saving to a database
+    convertMenu(): DatabaseMenu | Error {
+        if (this.weekMenu !== undefined) {
+            const dayMenu = this.weekMenu.days[getCurrentDayIndex()];
+            const weekData: DatabaseWeek = { weekNumber: this.weekMenu.weekNumber, year: new Date().getUTCFullYear() };
+            return { 
+                _id: new ObjectId(), version: 0, hash: dayMenu.hash, week: weekData, date: dayMenu.date, dayId: dayMenu.dayId, foods: dayMenu.menu 
+            };
+        }
+        return new Error("Archiver is never given a weekMenu.");
+    }
+
     async saveMenus() {
         if (this._db !== undefined) {
-            const collection = this._db.collection("foods");
-            const day: DbDay = { version: 0, date: new Date(),  }
+            const convertedMenu = this.convertMenu();
+            if (convertedMenu instanceof Error) {
+                console.error("Menu cannot be saved to database, no non-undefined menu was given to Archiver.");
+                return
+            }
 
-            await collection.insertOne(menus);
-            // this.retrieveEntry({foodName: "Riisip", weekNumber: this.weekMenu?.weekNumber})
+            const collection = this._db.collection("foods");
+
+            const hashExistsForMenu = await collection.findOne({ hash: convertedMenu.hash })
+
+            if (hashExistsForMenu === null) {
+                await collection.insertOne(convertedMenu);
+            } else {
+                console.log("Hash for foods already exists, not adding.")
+            }
+            
+            this.retrieveEntry({foodName: "Riisip", weekNumber: this.weekMenu?.weekNumber})
         }
     }
 
