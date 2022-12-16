@@ -1,9 +1,17 @@
 import { ObjectId } from "mongodb";
-import { DayMenu } from "../types";
+import { Food, Weekday } from "../types";
 
-export interface DbDay extends DayMenu {
-    _id?: ObjectId;
+export interface DatabaseWeek {
+    weekNumber: number;
+    year: number;
+}
+
+export interface DatabaseMenu {
+    _id: ObjectId;
     version: number;
-    hash: string;
-    week: { num: number, year: number };
+    hash: string | null;
+    week: DatabaseWeek;
+    date: Date;
+    dayId: Weekday;
+    foods: Food[];
 }
