@@ -1,7 +1,8 @@
 import { WeekMenu } from "../types";
-import { Db, MongoClient, ObjectId } from 'mongodb';
+import { Collection, Db, MongoClient, ObjectId } from 'mongodb';
 import { DatabaseMenu, DatabaseWeek } from "./dbTypes";
 import { getCurrentDayIndex } from "../utils";
+import { findAllByAltText } from "@testing-library/react";
 
 interface DatabaseOptions {
     dbUrl: string
@@ -71,7 +72,7 @@ export class Archiver extends Database {
     }
 
     // Converts a WeekMenu to be suited for saving to a database
-    convertMenu(): DatabaseMenu | Error {
+    private convertMenu(): DatabaseMenu | Error {
         if (this.weekMenu !== undefined) {
             const dayMenu = this.weekMenu.days[getCurrentDayIndex()];
             const weekData: DatabaseWeek = { weekNumber: this.weekMenu.weekNumber, year: new Date().getUTCFullYear() };
@@ -79,22 +80,31 @@ export class Archiver extends Database {
                 _id: new ObjectId(), version: 0, hash: dayMenu.hash, week: weekData, date: dayMenu.date, dayId: dayMenu.dayId, foods: dayMenu.menu 
             };
         }
+        // When property wasn't assigned to a menu, give error
         return new Error("Archiver is never given a weekMenu.");
     }
 
     async saveMenus() {
         if (this._db !== undefined) {
+            // Menu conversation
             const convertedMenu = this.convertMenu();
             if (convertedMenu instanceof Error) {
                 console.error("Menu cannot be saved to database, no non-undefined menu was given to Archiver.");
                 return
             }
 
-            const collection = this._db.collection("foods");
+            const collection: Collection = this._db.collection("foods");
 
-            const hashExistsForMenu = await collection.findOne({ hash: convertedMenu.hash })
+            // true if exists, false if not
+            const entryExistsForMenu: boolean = await collection.findOne({ hash: convertedMenu.hash }) !== null
+            
+            // Is weekend
+            const isWeekend: boolean = await collection.findOne({ hash: null}) !== null
 
-            if (hashExistsForMenu === null) {
+            if (isWeekend) {
+                console.log("vklp")
+            }
+            if (!entryExistsForMenu && new Date() !== convertedMenu.date) {
                 await collection.insertOne(convertedMenu);
             } else {
                 console.log("Hash for foods already exists, not adding.")
