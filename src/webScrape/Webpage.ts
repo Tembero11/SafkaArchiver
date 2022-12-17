@@ -1,8 +1,8 @@
 import parse, { HTMLElement } from "node-html-parser";
 import assert from "node:assert";
-import objectHash from "object-hash";
+import crypto from "crypto";
 import { ElementUndefinedError } from "../errors";
-import { DayMenu, WeekMenu } from "../types";
+import { DayMenu, Food, WeekMenu } from "../types";
 import { addDaysToDate, getDateOfISOWeek, isValidDateString } from "../utils";
 
 export default class Webpage {
@@ -32,12 +32,14 @@ export default class Webpage {
 
         // This might break when the year changes
         const mondayDate = getDateOfISOWeek(weekNum, new Date().getFullYear());
+        mondayDate.setHours(0, 0, 0)
 
         for (let i = 0; i < 7; i++) {
             const date = addDaysToDate(mondayDate, i);
             const dayHTML = dayContainers.at(i);
 
-            const day: Omit<DayMenu, "hash"> = {
+            const day: DayMenu = {
+                hash: null,
                 dayId: i,
                 date,
                 menu: []   
@@ -45,20 +47,36 @@ export default class Webpage {
 
             // if the html for the day is not found push the empty day to the array
             if (!dayHTML) {
-                fullMenu.days.push({hash: null, ...day});
+                fullMenu.days.push(day);
                 continue;
             }
-            // If not get the foods
 
+            // If not get the foods
             const foodsHTML = dayHTML.getElementsByTagName("td").at(1);
             assert(foodsHTML, new ElementUndefinedError("foodsHTML"));
-            const foods = foodsHTML.getElementsByTagName("p").map(e => this.parseFood(e.innerText)).filter(e => e.name);
 
+            const ogFoods: string[] = [];
+            const processedFoods: Food[] = [];
+
+            foodsHTML.getElementsByTagName("p").forEach(element => {
+                if (element.innerText.trim()) {
+                    ogFoods.push(element.innerText);
+                    processedFoods.push(this.getDietsAndName(element.innerText))
+                }
+            });
             // Add all the foods to the day object
-            day.menu.push(...foods);
+            day.menu = processedFoods;
+            
+            let hash = null;
+            if (ogFoods.length > 0) {
+                ogFoods.push(date.toISOString());
+                const hashable = ogFoods.join(".");
+                hash = crypto.createHash("md5").update(hashable).digest("hex");
+            }
 
             // Add the day to the week
-            fullMenu.days.push({hash: objectHash(day), ...day});
+            day.hash = hash;
+            fullMenu.days.push(day);
         }
         return fullMenu;
     }
@@ -94,51 +112,70 @@ export default class Webpage {
     
         return parseInt(num);
     }
+
     /**
      * 
      * @param foodName Unparsed food name
      * @returns name and diets of the food
      */
-    private parseFood(foodName: string) {
-        const trimmed = foodName.trim();
-
-        let name = trimmed.substring(0, 1).toUpperCase() + trimmed.substring(1);
-        
+    private getDietsAndName(foodName: string) {
+        // The default state for diets
         const result = {
-            name,
             isLactoseFree: false,
             isDairyFree: false,
             isGlutenFree: false,
         }
 
-        const match = foodName.match(/\(?(L|G|M|\s|,){1,}\)?$/);
-        if (match) {
-            name = name.replace(match[0], "").trim();
-            const dietUnparsed = match[0].trim()
+        // Change all empty characters into a space and remove spaces from the start and end of the string
+        // Also fix typos with slash not having a space infront
+        // This might in a rare condition where a diet character is infront of a slash fix the misinterpretation
+        const name = foodName.replaceAll(/\s/g, " ").split("/").join(" / ").trim();
 
-            const dietParsed = dietUnparsed.replaceAll(/\(|,|\s|\.|\)/g, "").split("");
+        // This regex finds any of the L, M, G characters that have a lower case nonalphabetic character after them
+        const dietRegex = /(L|M|G)[^a-zåäö]/g;
 
-            for (const diet of dietParsed) {
-                switch (diet) {
-                    case "L":
-                        result.isLactoseFree = true;
-                        break;
-                    case "M":
-                        result.isDairyFree = true;
-                        break;
-                    case "G":
-                        result.isGlutenFree = true;
-                        break;
-                    default:
-                        break;
-                }
+        // Also add one space to the end of the string
+        // A hacky way for the regex to handle the end of the string
+        const matches = (name + " ").match(dietRegex);
+
+        // Remove all characters that are considered not allowed
+        const notAllowedCharacters = /[^a-zA-ZåäöÅÄÖ/ ]{1,}/g;
+        let processedName = name
+        .replaceAll(dietRegex, "")
+        .replaceAll(notAllowedCharacters, "")
+        // Replace multiple whitespaces with only one
+        .replaceAll(/  +/g, " ").trim();
+
+        // Capitalize the first letter
+        processedName = processedName.charAt(0).toLocaleUpperCase() + processedName.substring(1)
+
+        if (!matches) return {
+            name: processedName,
+            ...result
+        }
+
+        // String might contain other chars as well
+        const dietString = matches.join("");
+
+        for (const possibleDiet of dietString) {
+            switch (possibleDiet) {
+                case "L":
+                    result.isLactoseFree = true;
+                    break;
+                case "M":
+                    result.isDairyFree = true;
+                    break;
+                case "G":
+                    result.isGlutenFree = true;
+                    break;
+                default:
+                    break;
             }
         }
 
-
-        // Update the name
-        result.name = name;
-
-        return result;
+        return {
+            name: processedName,
+            ...result
+        }
     }
 }
