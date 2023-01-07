@@ -14,7 +14,7 @@ The frontend source for this project is called SafkaNext and is available [here]
 
 ### Technology
 
-This projects uses a [Dockerized](https://www.docker.com/) [Node.js](https://nodejs.org/) enviroment with an [Express.js](https://expressjs.com/)  HTTP JSON REST API server with [MongoDB](https://www.mongodb.com/) as the database.
+This project uses a [Dockerized](https://www.docker.com/) [Node.js](https://nodejs.org/) enviroment with an [Express.js](https://expressjs.com/)  HTTP JSON REST API server with [MongoDB](https://www.mongodb.com/) as the database.
 
 
 ### Contributors
