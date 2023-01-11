@@ -1,8 +1,6 @@
 import { WeekMenu } from "../types";
 import { Collection, Db, MongoClient, ObjectId } from 'mongodb';
 import { DatabaseMenu, DatabaseWeek } from "./dbTypes";
-import { getCurrentDayIndex } from "../utils";
-import { findAllByAltText } from "@testing-library/react";
 
 interface DatabaseOptions {
     dbUrl: string
@@ -20,7 +18,7 @@ export class Database {
         this.dbName = options.dbName;
     }
     
-    async connect() {
+    async newClient() {
         // Don't do a new client if we already have a client
         if (this.client !== undefined) return
 
@@ -50,20 +48,14 @@ export class Database {
     get client() {
         return this._client;
     }
-   
+    
 }
 
 ///////////////////////////////////////////////////////////
 
-interface Query {
-    foodName?: string
-    weekNumber?: number
-    date?: Date
-}
-
 export class Archiver extends Database {
     weekMenu?: WeekMenu;
-    _db?: Db = undefined
+    _db?: Db = undefined;
 
     constructor(options: DatabaseOptions, db: Db) {
         super(options);
@@ -72,16 +64,20 @@ export class Archiver extends Database {
     }
 
     // Converts a WeekMenu to be suited for saving to a database
-    private convertMenu(): DatabaseMenu | Error {
+    private convertMenu(): DatabaseMenu[] | Error {
+        let daysMenus: DatabaseMenu[] = [];
         if (this.weekMenu !== undefined) {
-            const dayMenu = this.weekMenu.days[getCurrentDayIndex()];
-            const weekData: DatabaseWeek = { weekNumber: this.weekMenu.weekNumber, year: new Date().getUTCFullYear() };
-            return { 
-                _id: new ObjectId(), version: 0, hash: dayMenu.hash, week: weekData, date: dayMenu.date, dayId: dayMenu.dayId, foods: dayMenu.menu 
-            };
+            this.weekMenu.days.forEach((dayMenu) => {
+                // New object with date data for the week
+                const weekData: DatabaseWeek = { weekNumber: (this.weekMenu as WeekMenu).weekNumber, year: new Date().getUTCFullYear() };
+
+                // Construct full object which is then...
+                const full = { _id: new ObjectId(), version: 0, hash: dayMenu.hash, week: weekData, date: dayMenu.date, dayId: dayMenu.dayId, foods: dayMenu.menu };
+                // pushed into the array
+                daysMenus.push(full);
+            });
         }
-        // When property wasn't assigned to a menu, give error
-        return new Error("Archiver is never given a weekMenu.");
+        return daysMenus.length !== 0 ? daysMenus : new Error("Archiver is never given a weekMenu.");
     }
 
     async saveMenus() {
@@ -95,31 +91,36 @@ export class Archiver extends Database {
 
             const collection: Collection = this._db.collection("foods");
 
-            // true if exists, false if not
-            const entryExistsForMenu: boolean = await collection.findOne({ hash: convertedMenu.hash }) !== null
-            
-            // Is weekend
-            const isWeekend: boolean = await collection.findOne({ hash: null}) !== null
+            for (let i = 0; i < 6+1; i++) {
+                const isEntrySaved: boolean = await collection.findOne({ hash: convertedMenu[i].hash }) !== null
+                const isDuplicate: boolean = await collection.findOne({ date: convertedMenu[i].date }) !== null
+                const isWeekend: boolean = convertedMenu[i].hash === null 
 
-            if (isWeekend) {
-                console.log("vklp")
+                // Version updating; We want our frontend to take the most recent aka the least "problematic" version of the foods data.
+                // Sometimes they are updated during days because of typos or some other reason. This system basically tries to get around those typos and always
+                // give users the best service possible.
+                const oldVer = await collection.findOne({ date: convertedMenu[i].date, hash: !convertedMenu[i].hash });
+                // In case a match was found, just update the version to be itself + 1
+                oldVer !== null ? await collection.updateOne({ date: convertedMenu[i].date}, { $set: { version: oldVer.version + 1}}) : null
+
+                // Workdays
+                if (!isEntrySaved && !isDuplicate && !isWeekend) {
+                    await collection.insertOne(convertedMenu[i]);
+                // Weekends
+                } else if (isWeekend && !isDuplicate) {
+                    await collection.insertOne(convertedMenu[i]);
+                } 
             }
-            if (!entryExistsForMenu && new Date() !== convertedMenu.date) {
-                await collection.insertOne(convertedMenu);
-            } else {
-                console.log("Hash for foods already exists, not adding.")
-            }
-            
-            this.retrieveEntry({foodName: "Riisip", weekNumber: this.weekMenu?.weekNumber})
+
         }
     }
 
-    async retrieveEntry(query: Query ) {
-        if (this._db !== undefined) {
-            const xd: unknown = await this._db.collection("foods").findOne({"dayMenu.menu": {$elemMatch: {"name": "Lohimurekepihvit"}}})
+    // async retrieveEntry(query: Query ) {
+    //     if (this._db !== undefined) {
+    //         const xd: unknown = await this._db.collection("foods").findOne({"dayMenu.menu": {$elemMatch: {"name": "Lohimurekepihvit"}}})
 
-            if (query.weekNumber) console.log(query.weekNumber)
-            if (query.date) console.log(query.date)
-        }
-    }
+    //         if (query.weekNumber) console.log(query.weekNumber)
+    //         if (query.date) console.log(query.date)
+    //     }
+    // }
 }

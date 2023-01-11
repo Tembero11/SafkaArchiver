@@ -32,7 +32,7 @@ export let currentMenu: WeekMenu;
 
     let archiver: Archiver | undefined;
     if (!DISABLE_DB) {
-        archiver = await db.connect();
+        archiver = await db.newClient();
         assert(archiver, "Archiver is undefined");
     }
 
