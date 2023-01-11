@@ -5,8 +5,6 @@ export interface Food {
     isGlutenFree: boolean;
 }
 
-
-
 export interface DayMenu {
     // If the day has no menu the hash will be null
     hash: string | null;
@@ -29,9 +27,4 @@ export interface WeekMenu {
     modifiedTime: Date;
     weekNumber: number;
     days: DayMenu[];
-}
-
-export interface Menus {
-    weekMenu: WeekMenu
-    dayMenu: DayMenu
 }
