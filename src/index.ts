@@ -40,6 +40,7 @@ export let currentMenu: WeekMenu;
 
     poller.on("polled", (menu) => {
         currentMenu = menu;
+        console.log(currentMenu)
 
         // Check that the database is not disabled
         if (!DISABLE_DB && archiver) {

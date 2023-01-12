@@ -66,6 +66,7 @@ export class Archiver extends Database {
     // Converts a WeekMenu to be suited for saving to a database
     private convertMenu(): DatabaseMenu[] | Error {
         let daysMenus: DatabaseMenu[] = [];
+        console.log(this.weekMenu);
         if (this.weekMenu !== undefined) {
             this.weekMenu.days.forEach((dayMenu) => {
                 // New object with date data for the week
@@ -109,7 +110,9 @@ export class Archiver extends Database {
                 // Weekends
                 } else if (isWeekend && !isDuplicate) {
                     await collection.insertOne(convertedMenu[i]);
-                } 
+                } else {
+                    console.log("on jo");
+                }
             }
 
         }
